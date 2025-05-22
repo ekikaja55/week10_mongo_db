@@ -261,6 +261,75 @@ const routesMatkul = () => {
   });
 };
 
+const routesPengumuman = () => {
+  app.get("/api/pengumuman/insert", async (req, res) => {
+    const dataPengumuman = [];
+
+    await Pengumuman.deleteMany({});
+    console.log("\nhapus isi document berhasil\n");
+
+    for (let i = 0; i < 5; i++) {
+      dataPengumuman.push({
+        _id: new ObjectId(),
+        kode: 1 + i,
+        desc: `ini pengumuman yang ke - ${i+1}`,
+        created_at: faker.date.past(),
+      });
+    }
+
+    await Pengumuman.insertMany(dataPengumuman);
+    return res.status(200).json({
+      message: "Berhasil Insert 5 Data Pengumuman",
+      result: dataPengumuman,
+    });
+  });
+
+  //update 4 pengumuman
+  app.get("/api/pengumuman/update", async (req, res) => {
+    const result = [];
+    const dataKode = await Pengumuman.find(
+      {},
+      { projection: { kode: 1, desc: 1, _id: 0 } }
+    )
+      .limit(4)
+      .toArray();
+
+
+    for (let i = 0; i < dataKode.length; i++) {
+      const descbaru = `${dataKode[i].desc} (updated)`;
+      await Pengumuman.findOneAndUpdate(
+        { kode: dataKode[i].kode },
+        {
+          $set: {
+            desc: descbaru,
+          },
+          $currentDate: { lastModified: true },
+        }
+      );
+      result.push(`${dataKode[i].desc}  ->  ${descbaru}`);
+    }
+
+    return res.status(200).json({
+      message: "Berhasil Update 4 data pengumuman",
+      result: result,
+    });
+  });
+
+  //delete 1 pengumuman berdasarkan kode
+  app.get("/api/pengumuman/delete", async (req, res) => {
+    const kode = 1;
+    const result = await Pengumuman.findOneAndDelete({ kode: kode });
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: `pengumuman dengan kode ${kode} tidak ditemukan` });
+    }
+    return res.status(200).json({
+      message: `berhasil delete 1 data pengumuman dengan kode ${kode}`,
+    });
+  });
+};
+
 //main
 const main = async () => {
   try {
@@ -268,6 +337,7 @@ const main = async () => {
     routesMhs();
     routesDosen();
     routesMatkul();
+    routesPengumuman();
 
     app.listen(port, () => {
       console.log(`nyambung di port ${port}`);
